@@ -4,10 +4,10 @@ namespace EveConnectionFinder.Models
 {
     public class Character
     {
-        string charName {get; set;}
-        int charID {get; set;}
-        List<Corp> charCorps {get; set;}
-        List<Alliance> charAlliances {get; set;}
+        public string charName {get; set;}
+        public int charID {get; set;}
+        public List<Corp> charCorps {get; set;}
+        public List<Alliance> charAlliances {get; set;}
 
         static void GetCorps()
         {
@@ -18,11 +18,5 @@ namespace EveConnectionFinder.Models
         {
 
         }
-
-
-
-        
-
-
     }
 }

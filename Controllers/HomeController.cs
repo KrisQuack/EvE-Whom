@@ -26,7 +26,6 @@ namespace EveConnectionFinder.Controllers
         public IActionResult Index(FormSubmit form)
         {
             //Data is returned from the form here
-            
             return View();
         }
 

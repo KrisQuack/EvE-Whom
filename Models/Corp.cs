@@ -4,9 +4,9 @@ namespace EveConnectionFinder.Models
 {
     public class Corp
     {
-        string corpName {get; set;}
-        int corpID {get; set;}
-        DateTime startDate {get; set;}
-        DateTime endDate {get; set;}
+        public string corpName {get; set;}
+        public int corpID {get; set;}
+        public DateTime startDate {get; set;}
+        public DateTime endDate {get; set;}
     }
 }
