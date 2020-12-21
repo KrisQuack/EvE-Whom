@@ -6,9 +6,9 @@
     <div class="text-center">
         <h1 class="display-4">Paste names into the textboxes below</h1>
         Your Character Name:
-        @Html.TextBoxFor(m => m.UserCharacter, new{@class="form-control bg-dark text-light", @placeholder="Quackers Duckington",@required  = "required", @pattern="[A-Za-z0-9]+",@title="Please only enter valid character names"}) 
+        @Html.TextBoxFor(m => m.UserCharacter, new{@class="form-control bg-dark text-light", @placeholder="Quackers Duckington",@required  = "required", @pattern="[A-Za-z0-9 ]+",@title="Please only enter valid character names"}) 
         Characters to compare:
-        @Html.TextAreaFor(m => m.PasteList, new{@class="form-control bg-dark text-light", @rows="10", @placeholder="Quackers Duckington\nBob Bobsonne\nIam Lynch",@required  = "required", @pattern="[A-Za-z0-9]+",@title="Please only enter valid character names"}) 
+        @Html.TextAreaFor(m => m.PasteList, new{@class="form-control bg-dark text-light", @rows="10", @placeholder="Quackers Duckington\nBob Bobsonne\nIam Lynch",@required  = "required", @pattern="[A-Za-z0-9 ]+",@title="Please only enter valid character names"}) 
     </div>
     <button type="submit" class="btn btn-primary btn-lg">Submit</button>
 }

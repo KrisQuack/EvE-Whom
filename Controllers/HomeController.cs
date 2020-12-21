@@ -26,6 +26,11 @@ namespace EveConnectionFinder.Controllers
         public IActionResult Index(FormSubmit form)
         {
             //Data is returned from the form here
+            //Proccess Details for user character
+            var userCharacter = new Character{charName = form.UserCharacter};
+            userCharacter.GetCharID();
+            userCharacter.GetCorps();
+
             return View();
         }
 
