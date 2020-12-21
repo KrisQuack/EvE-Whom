@@ -6,8 +6,8 @@ namespace EveConnectionFinder.Models
     {
         string charName {get; set;}
         int charID {get; set;}
-        List<Corp> charCorps = new List<Corp>();
-        List<Alliance> charAlliances = new List<Alliance>();
+        List<Corp> charCorps {get; set;}
+        List<Alliance> charAlliances {get; set;}
 
         static void GetCorps()
         {
