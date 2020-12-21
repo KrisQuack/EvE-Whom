@@ -1,1 +1,2 @@
 # EveConnectionFinder
+# Needs more detail
