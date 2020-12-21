@@ -22,6 +22,13 @@ namespace EveConnectionFinder.Controllers
         {
             return View();
         }
+        [HttpPost]
+        public IActionResult Index(FormSubmit form)
+        {
+            //Data is returned from the form here
+            
+            return View();
+        }
 
         public IActionResult Privacy()
         {
