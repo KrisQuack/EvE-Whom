@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using EveConnectionFinder.Models;
@@ -25,6 +24,9 @@ namespace EveConnectionFinder.Controllers
         [HttpPost]
         public IActionResult Index(FormSubmit form)
         {
+            //Time code execution
+            var watch = new Stopwatch();
+            watch.Start();
             //Data is returned from the form here
             //Process Details for user character
             var userCharacter = new Character{charName = form.UserCharacter};
@@ -41,6 +43,8 @@ namespace EveConnectionFinder.Controllers
             }
             //Find connections
             ViewBag.connections = userCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart);
+            watch.Stop();
+            ViewBag.timer = watch.Elapsed.Seconds;
             //Return view
             return View();
         }

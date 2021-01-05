@@ -14,50 +14,45 @@ namespace EveConnectionFinder.Models
         public List<Alliance> Alliances {get; set;}
 
         public void GetCharID(){
-            //Declare Web Client
-            using(WebClient client = new WebClient()) {
-                //Get Character ID
-                string charSearchJson = client.DownloadString("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search="+this.charName+"&strict=true");
+            //Get Character ID
+                string charSearchJson = DownloadString("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search="+this.charName+"&strict=true");
                 var charSearchResult = JsonConvert.DeserializeObject<ESISearch>(charSearchJson);
                 this.charID = int.Parse(charSearchResult.character[0].ToString());
-            }
         }
         public void GetCorps()
         {
-            //Declare Web Client
-            using(WebClient client = new WebClient()) {
-                
-                //Get history list
-                string corpHistoryJson = client.DownloadString("https://esi.evetech.net/latest/characters/"+this.charID+"/corporationhistory/?datasource=tranquility");
-                var corpHistoryResult = JsonConvert.DeserializeObject<List<ESICorpHistory>>(corpHistoryJson);
-                //Process into Corp class
-                this.Corps = new List<Corp>();
-                foreach(var history in corpHistoryResult){
-                    //corp name
-                    string corpNameSearch = client.DownloadString("https://esi.evetech.net/latest/corporations/"+history.corporation_id+"/?datasource=tranquility");
-                    var corpNameSearchResult = JsonConvert.DeserializeObject<ESICorp>(corpNameSearch);
-                    //
-                    var corp = new Corp{
-                        corpID = history.corporation_id,
-                        corpName = corpNameSearchResult.name,
-                        startDate = DateTime.Parse(history.start_date)
-                    };
-                    Corps.Add(corp);
-                }
-                //Populate end dates
-                Corp previousCorp = null;
-                foreach(var c in Corps.OrderByDescending(c => c.startDate))
+            //Get history list
+            string corpHistoryJson = DownloadString("https://esi.evetech.net/latest/characters/" + this.charID + "/corporationhistory/?datasource=tranquility");
+            var corpHistoryResult = JsonConvert.DeserializeObject<List<ESICorpHistory>>(corpHistoryJson);
+            //Process into Corp class
+            this.Corps = new List<Corp>();
+            foreach (var history in corpHistoryResult)
+            {
+                //corp name
+                string corpNameSearch = DownloadString("https://esi.evetech.net/latest/corporations/" + history.corporation_id + "/?datasource=tranquility");
+                var corpNameSearchResult = JsonConvert.DeserializeObject<ESICorp>(corpNameSearch);
+                //
+                var corp = new Corp
                 {
-                    if (previousCorp != null)
-                    {
-                        c.endDate = previousCorp.startDate;
-                    }
-                    else
-                    {
-                        c.endDate = DateTime.MaxValue;
-                    }
-                    previousCorp = c;
+                    corpID = history.corporation_id,
+                    corpName = corpNameSearchResult.name,
+                    startDate = DateTime.Parse(history.start_date)
+                };
+                Corps.Add(corp);
+            }
+            //Populate end dates
+            Corp previousCorp = null;
+            foreach (var c in Corps.OrderByDescending(c => c.startDate))
+            {
+                if (previousCorp != null)
+                {
+                    c.endDate = previousCorp.startDate;
                 }
+                else
+                {
+                    c.endDate = DateTime.MaxValue;
+                }
+                previousCorp = c;
             }
         }
         public void GetAlliances()
@@ -95,6 +90,25 @@ namespace EveConnectionFinder.Models
                 }
             }
             return Connections;
+        }
+
+        private string DownloadString(string url)
+        {
+            using var client = new WebClient();
+            int currentTry = 0;
+            while (true)
+            {
+                try
+                {
+                    return client.DownloadString(url);
+                }
+                catch (Exception)
+                {
+                    //If fails sleep for half a second and try again 3 times
+                    if (++currentTry == 3) throw;
+                    System.Threading.Thread.Sleep(500);
+                }
+            }
         }
     }
 }

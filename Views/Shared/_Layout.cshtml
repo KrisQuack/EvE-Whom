@@ -24,6 +24,7 @@
     <footer class="footer text-muted">
         <div class="container">
             &copy; 2020 - EveConnectionFinder - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            @if(ViewBag.timer != null) { @ViewBag.timer}
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
