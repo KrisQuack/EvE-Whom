@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Net;
 using Newtonsoft.Json;
 using System;
+using System.Linq;
+
 namespace EveConnectionFinder.Models
 {
     public class Character
@@ -38,8 +40,18 @@ namespace EveConnectionFinder.Models
                         corpID = history.corporation_id,
                         corpName = corpNameSearchResult.name,
                         startDate = DateTime.Parse(history.start_date)
-                        };
+                    };
                     Corps.Add(corp);
+                }
+                //Populate end dates
+                Corp previousCorp = null;
+                foreach(var c in Corps.OrderByDescending(c => c.startDate))
+                {
+                    if (previousCorp != null)
+                    {
+                        c.endDate = previousCorp.startDate;
+                    }
+                    previousCorp = c;
                 }
             }
         }
