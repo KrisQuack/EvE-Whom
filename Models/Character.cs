@@ -15,9 +15,16 @@ namespace EveConnectionFinder.Models
 
         public void GetCharID(){
             //Get Character ID
-                string charSearchJson = DownloadString("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search="+this.charName+"&strict=true");
+            try
+            {
+                string charSearchJson = DownloadString("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + this.charName + "&strict=true");
                 var charSearchResult = JsonConvert.DeserializeObject<ESISearch>(charSearchJson);
                 this.charID = int.Parse(charSearchResult.character[0].ToString());
+            }
+            catch (Exception)
+            {
+                this.charID = 3004033;
+            }
         }
         public void GetCorps()
         {
