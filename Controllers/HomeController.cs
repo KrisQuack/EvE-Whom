@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using EveConnectionFinder.Models;
+using System.Threading.Tasks;
 
 namespace EveConnectionFinder.Controllers
 {
@@ -29,22 +30,24 @@ namespace EveConnectionFinder.Controllers
             watch.Start();
             //Data is returned from the form here
             //Process Details for user character
-            var userCharacter = new Character{charName = form.UserCharacter};
+            var userCharacter = new Character { charName = form.UserCharacter };
             userCharacter.GetCharID();
             userCharacter.GetCorps();
             //Process details for paste
             var pastedCharacters = new List<Character>();
-            foreach(var name in form.PasteList.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
-            {
+            string[] charlist = form.PasteList.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            //Parallel to multi-thread and get things done faster
+            Parallel.ForEach(charlist, name => 
+            { 
                 var character = new Character { charName = name };
                 character.GetCharID();
                 character.GetCorps();
                 pastedCharacters.Add(character);
-            }
+            });
             //Find connections
             ViewBag.connections = userCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart);
             watch.Stop();
-            ViewBag.timer = watch.Elapsed.Seconds;
+            ViewBag.timer = watch.Elapsed.TotalSeconds;
             //Return view
             return View();
         }
