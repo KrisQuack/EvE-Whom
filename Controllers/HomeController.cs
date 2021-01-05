@@ -40,7 +40,7 @@ namespace EveConnectionFinder.Controllers
                 pastedCharacters.Add(character);
             }
             //Find connections
-            ViewBag.connections = userCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.entityStart);
+            ViewBag.connections = userCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart);
             //Return view
             return View();
         }

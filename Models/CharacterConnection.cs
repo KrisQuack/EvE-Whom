@@ -11,7 +11,7 @@ namespace EveConnectionFinder.Models
         public int charID { get; set; }
         public string entityName { get; set; }
         public int entityID { get; set; }
-        public DateTime entityStart { get; set; }
-        public DateTime entityEnd { get; set; }
+        public DateTime overlapStart { get; set; }
+        public DateTime overlapEnd { get; set; }
     }
 }

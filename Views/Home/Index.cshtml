@@ -20,8 +20,7 @@
                         <th scope="col"></th>
                         <th scope="col">Name</th>
                         <th scope="col">Entity</th>
-                        <th scope="col">Join Date</th>
-                        <th scope="col">Leave Date</th>
+                        <th scope="col">Overlap</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,12 +33,13 @@
                         </td>
                         <td>@connection.charName</td>
                         <td>@connection.entityName</td>
-                        <td>@connection.entityStart.ToString("dd-MMM-yyy")</td>
-                        @if (connection.entityEnd != DateTime.MinValue)
+                        <td>@connection.overlapStart.ToString("dd-MMM-yyy") To 
+                        @if (connection.overlapEnd != DateTime.MaxValue)
                         {
-                            <td>@connection.entityEnd.ToString("dd-MMM-yyy")</td>
+                            @connection.overlapEnd.ToString("dd-MMM-yyy")
                         }
-                        else { <td></td>}
+                        else { @DateTime.UtcNow.ToString("dd-MMM-yyy") }
+                        </td>
                     </tr>
                     }
                 </tbody>

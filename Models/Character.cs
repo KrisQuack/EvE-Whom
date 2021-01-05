@@ -26,6 +26,7 @@ namespace EveConnectionFinder.Models
         {
             //Declare Web Client
             using(WebClient client = new WebClient()) {
+                
                 //Get history list
                 string corpHistoryJson = client.DownloadString("https://esi.evetech.net/latest/characters/"+this.charID+"/corporationhistory/?datasource=tranquility");
                 var corpHistoryResult = JsonConvert.DeserializeObject<List<ESICorpHistory>>(corpHistoryJson);
@@ -51,6 +52,10 @@ namespace EveConnectionFinder.Models
                     {
                         c.endDate = previousCorp.startDate;
                     }
+                    else
+                    {
+                        c.endDate = DateTime.MaxValue;
+                    }
                     previousCorp = c;
                 }
             }
@@ -69,17 +74,22 @@ namespace EveConnectionFinder.Models
             foreach (var corp in this.Corps.Where(c => !rookieCorps.Contains(c.corpName)))
             {
                 //get pasted chars who share that corp at some time
-                foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID) > 0))
+                foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate) > 0))
                 {
-                    var matchEntry = match.Corps.FirstOrDefault(c => c.corpID == corp.corpID);
+                    var matchEntry = match.Corps.FirstOrDefault(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate);
+                    //Calculate overlap dates
+                    DateTime entityStart;
+                    DateTime entityEnd;
+                    if(matchEntry.startDate > corp.startDate) { entityStart = matchEntry.startDate;} else { entityStart = corp.startDate;}
+                    if(matchEntry.endDate > corp.endDate) { entityEnd = corp.endDate;} else { entityEnd = matchEntry.endDate;}
                     var connection = new CharacterConnection()
                     {
                         charID = match.charID,
                         charName = match.charName,
                         entityID = corp.corpID,
                         entityName = corp.corpName,
-                        entityStart = matchEntry.startDate,
-                        entityEnd = matchEntry.endDate
+                        overlapStart = entityStart,
+                        overlapEnd = entityEnd
                     };
                     Connections.Add(connection);
                 }
