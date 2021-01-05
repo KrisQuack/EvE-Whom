@@ -30,6 +30,17 @@ namespace EveConnectionFinder.Controllers
             var userCharacter = new Character{charName = form.UserCharacter};
             userCharacter.GetCharID();
             userCharacter.GetCorps();
+            //Process details for paste
+            var pastedCharacters = new List<Character>();
+            foreach(var name in form.PasteList.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var character = new Character { charName = name };
+                character.GetCharID();
+                character.GetCorps();
+                pastedCharacters.Add(character);
+            }
+            //Find connections
+            ViewBag.connections = userCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.entityStart);
             //Return view
             return View();
         }

@@ -6,11 +6,46 @@
     <div class="text-center">
         <h1 class="display-4">Paste names into the textboxes below</h1>
         Your Character Name:
-        @Html.TextBoxFor(m => m.UserCharacter, new{@class="form-control bg-dark text-light", @placeholder="Quackers Duckington",@required  = "required", @pattern="[A-Za-z0-9 ]+",@title="Please only enter valid character names"}) 
+        @Html.TextBoxFor(m => m.UserCharacter, new { @class = "form-control bg-dark text-light", @placeholder = "Quackers Duckington", @required = "required", @pattern = "[A-Za-z0-9 ]+", @title = "Please only enter valid character names", @spellcheck = "false" })
         Characters to compare:
-        @Html.TextAreaFor(m => m.PasteList, new{@class="form-control bg-dark text-light", @rows="10", @placeholder="Quackers Duckington\nBob Bobsonne\nIam Lynch",@required  = "required", @pattern="[A-Za-z0-9 ]+",@title="Please only enter valid character names"}) 
+        @Html.TextAreaFor(m => m.PasteList, new { @class = "form-control bg-dark text-light", @rows = "10", @placeholder = "Quackers Duckington\nBob Bobsonne\nIam Lynch", @required = "required", @pattern = "[A-Za-z0-9 ]+", @title = "Please only enter valid character names", @spellcheck = "false" })
     </div>
     <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+    <div>
+        @if (ViewBag.connections != null)
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Entity</th>
+                        <th scope="col">Join Date</th>
+                        <th scope="col">Leave Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (CharacterConnection connection in ViewBag.connections)
+                    {
+                    <tr>
+                        <td>
+                            <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;" />
+                            <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;" />
+                        </td>
+                        <td>@connection.charName</td>
+                        <td>@connection.entityName</td>
+                        <td>@connection.entityStart.ToString("dd-MMM-yyy")</td>
+                        @if (connection.entityEnd != DateTime.MinValue)
+                        {
+                            <td>@connection.entityEnd.ToString("dd-MMM-yyy")</td>
+                        }
+                        else { <td></td>}
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
 }
 
 @ViewBag.status

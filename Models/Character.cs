@@ -55,10 +55,36 @@ namespace EveConnectionFinder.Models
                 }
             }
         }
-
-        static void GetAlliances()
+        public void GetAlliances()
         {
-            
+        }
+
+        public List<CharacterConnection> FindConnections(List<Character> pastedCharacters)
+        {
+            var Connections = new List<CharacterConnection>();
+            //Define rookie corps to ignore
+
+            var rookieCorps = new string[] { "Hedion University", "Imperial Academy", "Royal Amarr Institute", "School of Applied Knowledge", "Science and Trade Institute", "State War Academy", "Center for Advanced Studies", "Federal Navy Academy", "University of Caille", "Pator Tech School", "Republic Military School", "Republic University", "Viziam", "Ministry of War", "Imperial Shipment", "Perkone", "Caldari Provisions", "Deep Core Mining Inc.", "The Scope", "Aliastra", "Garoun Investment Bank", "Brutor Tribe", "Sebiestor Tribe", "Native Freshfood", "Ministry of Internal Order", "Expert Distribution", "Impetus", "Brutor Tribe", "Amarr Imperial Navy", "Ytiri", "Federal Intelligence Office", "Republic Security Services", "Dominations", "Guristas"};
+            //Loop Chars corp history
+            foreach (var corp in this.Corps.Where(c => !rookieCorps.Contains(c.corpName)))
+            {
+                //get pasted chars who share that corp at some time
+                foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID) > 0))
+                {
+                    var matchEntry = match.Corps.FirstOrDefault(c => c.corpID == corp.corpID);
+                    var connection = new CharacterConnection()
+                    {
+                        charID = match.charID,
+                        charName = match.charName,
+                        entityID = corp.corpID,
+                        entityName = corp.corpName,
+                        entityStart = matchEntry.startDate,
+                        entityEnd = matchEntry.endDate
+                    };
+                    Connections.Add(connection);
+                }
+            }
+            return Connections;
         }
     }
 }
