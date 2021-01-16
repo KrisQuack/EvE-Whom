@@ -35,9 +35,9 @@ namespace EveConnectionFinder.Controllers
             userCharacter.GetCorps();
             //Process details for paste
             var pastedCharacters = new List<Character>();
-            string[] charlist = form.PasteList.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] charList = form.PasteList.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             //Parallel to multi-thread and get things done faster
-            Parallel.ForEach(charlist, name => 
+            Parallel.ForEach(charList, name => 
             { 
                 var character = new Character { charName = name };
                 character.GetCharID();

@@ -3,6 +3,7 @@ using System.Net;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EveConnectionFinder.Models
 {
@@ -33,7 +34,7 @@ namespace EveConnectionFinder.Models
             var corpHistoryResult = JsonConvert.DeserializeObject<List<ESICorpHistory>>(corpHistoryJson);
             //Process into Corp class
             this.Corps = new List<Corp>();
-            foreach (var history in corpHistoryResult)
+            Parallel.ForEach(corpHistoryResult, history =>
             {
                 //corp name
                 string corpNameSearch = DownloadString("https://esi.evetech.net/latest/corporations/" + history.corporation_id + "/?datasource=tranquility");
@@ -46,7 +47,7 @@ namespace EveConnectionFinder.Models
                     startDate = DateTime.Parse(history.start_date)
                 };
                 Corps.Add(corp);
-            }
+            });
             //Populate end dates
             Corp previousCorp = null;
             foreach (var c in Corps.OrderByDescending(c => c.startDate))
@@ -113,7 +114,6 @@ namespace EveConnectionFinder.Models
                 {
                     //If fails sleep for half a second and try again 3 times
                     if (++currentTry == 3) throw;
-                    System.Threading.Thread.Sleep(500);
                 }
             }
         }
