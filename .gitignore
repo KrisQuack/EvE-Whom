@@ -12,6 +12,7 @@
 .idea
  
 # VSCode Specific
+.vscode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
