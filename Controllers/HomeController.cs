@@ -42,7 +42,7 @@ namespace EveConnectionFinder.Controllers
                 //Process details for paste
                 var pastedCharacters = new List<Character>();
                 string[] charList =
-                    form.PasteList.Split(new char[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries);
+                    form.PasteList.Replace(userCharacter.charName,"").Split(new char[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries);
                 //Parallel to multi-thread and get things done faster
                 Parallel.ForEach(charList, name =>
                 {
