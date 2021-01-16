@@ -23,7 +23,6 @@ namespace EveConnectionFinder.Controllers
 
         public IActionResult Index()
         {
-            ViewBag.error = "e";
             return View();
         }
         [HttpPost]
