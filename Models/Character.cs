@@ -76,7 +76,7 @@ namespace EveConnectionFinder.Models
             //Loop Chars corp history
             foreach (var corp in this.Corps.Where(c => !rookieCorps.Contains(c.corpName)))
             {
-                //get pasted chars who share that corp at some time
+                //get pasted chars who share that corp at same time
                 foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate) > 0))
                 {
                     var matchEntry = match.Corps.FirstOrDefault(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate);
@@ -112,8 +112,8 @@ namespace EveConnectionFinder.Models
                 }
                 catch (Exception)
                 {
-                    //If fails sleep for half a second and try again 3 times
-                    if (++currentTry == 3) throw;
+                    //If fails try again 5 times
+                    if (++currentTry == 5) throw;
                 }
             }
         }
