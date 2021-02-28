@@ -1,7 +1,23 @@
 ﻿@page "/"
+@using System.Diagnostics
 
-<h1>Hello, world!</h1>
+<div class="text-center">
+    <h2 class="display-4">Paste names into the textboxes below</h2>
+    Your Character Name:<br />
+    <input @bind="MainChar" class="form-control bg-dark text-light" required="required" spellcheck="false" pattern="[A-Za-z0-9 ]+" title="Please only enter valid character names" /><br />
+    Characters to compare:<br />
+    <textarea @bind="CharList" class="form-control bg-dark text-light" rows="10" required="required" spellcheck="false" pattern="[A-Za-z0-9 ]+" title="Please only enter valid character names"></textarea>
+</div>
+<button class="btn btn-primary btn-lg" @onclick="test">Submit</button>
 
-Welcome to your new app.
+@code
+ {
+    private string MainChar;
+    private string CharList;
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    private void test(MouseEventArgs e)
+    {
+        Console.WriteLine(MainChar);
+        Console.WriteLine(CharList);
+    }
+ }

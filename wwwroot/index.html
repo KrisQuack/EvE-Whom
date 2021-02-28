@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 
 <head>
@@ -12,7 +12,17 @@
 </head>
 
 <body>
-    <div id="app">Loading...</div>
+    <div id="app">
+        <div style="position:absolute; top:30vh; width:100%; text-align: center;">
+            <h1>EVE Connection Finder</h1>
+            <div class="spinner-grow" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <div class="text-muted" style="position:absolute; top:50vh; width:100%; text-align: center;">
+            <p>This app was created using C# Blazor so all code is ran in-browser. The app may need a second to load on slower connections</p>
+        </div>
+    </div>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.
