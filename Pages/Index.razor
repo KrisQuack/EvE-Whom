@@ -12,7 +12,7 @@
 @if (Progress != 0)
 {
     <hr />
-    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round(@DateTime.Now - @RunTimer).TotalSeconds)s</p>
+    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((@DateTime.Now - @RunTimer).TotalSeconds)s</p>
     <div class="progress">
         <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
     </div>
@@ -126,14 +126,18 @@
             var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + this.charID + "/corporationhistory/?datasource=tranquility");
             //Process into Corp class
             this.Corps = new List<Corp>();
+            var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
+            Console.WriteLine(corpIDs.Length);
+            var corpNameSearch = await httpClient.PostAsJsonAsync<int[]>("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
+            Console.WriteLine(await corpNameSearch.Content.ReadAsStringAsync());
+            var corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESICorp>>();
             foreach(var history in corpHistoryJson)
             {
                 //corp name
-                var corpNameSearch = await httpClient.GetFromJsonAsync<ESICorp>("https://esi.evetech.net/latest/corporations/" + history.corporation_id + "/?datasource=tranquility");
                 var corp = new Corp
                 {
                     corpID = history.corporation_id,
-                    corpName = corpNameSearch.name,
+                    corpName = corpNames.FirstOrDefault(c => c.id == history.corporation_id).name,
                     startDate = DateTime.Parse(history.start_date)
                 };
                 Corps.Add(corp);
@@ -218,20 +222,9 @@
     }
     public class ESICorp
     {
-        public int alliance_id { get; set; }
-        public int ceo_id { get; set; }
-        public int creator_id { get; set; }
-        public string date_founded { get; set; }
-        public string description { get; set; }
-        public int faction_id { get; set; }
-        public int home_station_id { get; set; }
-        public int member_count { get; set; }
+        public string category { get; set; }
+        public int id { get; set; }
         public string name { get; set; }
-        public long shares { get; set; }
-        public decimal tax_rate { get; set; }
-        public string ticker { get; set; }
-        public string url { get; set; }
-        public bool war_eligible { get; set; }
     }
     public class ESICorpHistory
     {
