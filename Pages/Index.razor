@@ -11,7 +11,8 @@
 <button class="btn btn-primary btn-lg" @onclick="CheckCharacters">Submit</button>
 @if (Progress != 0)
 {
-    <br />
+    <hr />
+    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round(@DateTime.Now - @RunTimer).TotalSeconds)s</p>
     <div class="progress">
         <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
     </div>
@@ -54,6 +55,9 @@
 {
     private string MainChar;
     private string CharPaste;
+    private DateTime RunTimer;
+    private int CurrentCount = 0;
+    private int TotalCount = 0;
     private int Progress = 0;
     private List<CharacterConnection> connections;
     static HttpClient httpClient = new();
@@ -65,8 +69,9 @@
             //Progress bar prep
             Progress = 0;
             var charList = CharPaste.Replace(MainChar, "").Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            var currentCount = 0;
-            var totalCount = charList.Length;
+            RunTimer = DateTime.Now;
+            CurrentCount = 0;
+            TotalCount = charList.Length;
             //Process Main Character
             var mainCharacter = new Character { charName = MainChar };
             await mainCharacter.GetCharID();
@@ -80,8 +85,8 @@
                 await character.GetCorps();
                 pastedCharacters.Add(character);
                 //Count Progress
-                currentCount++;
-                Progress = (int)Math.Round(((decimal)currentCount / (decimal)totalCount) * 100);
+                CurrentCount++;
+                Progress = (int)Math.Round(((decimal)CurrentCount / (decimal)TotalCount) * 100);
                 Console.WriteLine(Progress+"%");
                 StateHasChanged();
             }
