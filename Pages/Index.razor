@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using System.Net.Http
 
 <div class="text-center">
     <h2 class="display-4">Paste names into the textboxes below</h2>
@@ -12,7 +11,7 @@
 @if (Progress != 0)
 {
     <hr />
-    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((@DateTime.Now - @RunTimer).TotalSeconds)s</p>
+    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((DateTime.Now - RunTimer).TotalSeconds)s</p>
     <div class="progress">
         <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
     </div>
@@ -56,9 +55,9 @@
     private string MainChar;
     private string CharPaste;
     private DateTime RunTimer;
-    private int CurrentCount = 0;
-    private int TotalCount = 0;
-    private int Progress = 0;
+    private int CurrentCount;
+    private int TotalCount;
+    private int Progress;
     private List<CharacterConnection> connections;
     static HttpClient httpClient = new();
 
@@ -68,7 +67,7 @@
         {
             //Progress bar prep
             Progress = 0;
-            var charList = CharPaste.Replace(MainChar, "").Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var charList = CharPaste.Replace(MainChar, "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             RunTimer = DateTime.Now;
             CurrentCount = 0;
             TotalCount = charList.Length;
@@ -86,8 +85,7 @@
                 pastedCharacters.Add(character);
                 //Count Progress
                 CurrentCount++;
-                Progress = (int)Math.Round(((decimal)CurrentCount / (decimal)TotalCount) * 100);
-                Console.WriteLine(Progress+"%");
+                Progress = (int)Math.Round((CurrentCount / (decimal)TotalCount) * 100);
                 StateHasChanged();
             }
             connections = mainCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart).ToList();
@@ -111,29 +109,26 @@
             //Get Character ID
             try
             {
-                var charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + this.charName + "&strict=true");
-                this.charID = int.Parse(charSearchJson.character[0].ToString());
+                var charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
+                charID = int.Parse(charSearchJson.character[0].ToString());
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
-                this.charID = 3004033;
+                charID = 3004033;
             }
         }
         public async Task GetCorps()
         {
             //Get history list
-            var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + this.charID + "/corporationhistory/?datasource=tranquility");
+            var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
             //Process into Corp class
-            this.Corps = new List<Corp>();
+            Corps = new List<Corp>();
             var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
-            Console.WriteLine(corpIDs.Length);
-            var corpNameSearch = await httpClient.PostAsJsonAsync<int[]>("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
-            Console.WriteLine(await corpNameSearch.Content.ReadAsStringAsync());
-            var corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESICorp>>();
+            var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
+            var corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
             foreach(var history in corpHistoryJson)
             {
-                //corp name
                 var corp = new Corp
                 {
                     corpID = history.corporation_id,
@@ -163,9 +158,9 @@
             var Connections = new List<CharacterConnection>();
             //Define rookie corps to ignore
 
-            var rookieCorps = new string[] { "Hedion University", "Imperial Academy", "Royal Amarr Institute", "School of Applied Knowledge", "Science and Trade Institute", "State War Academy", "Center for Advanced Studies", "Federal Navy Academy", "University of Caille", "Pator Tech School", "Republic Military School", "Republic University", "Viziam", "Ministry of War", "Imperial Shipment", "Perkone", "Caldari Provisions", "Deep Core Mining Inc.", "The Scope", "Aliastra", "Garoun Investment Bank", "Brutor Tribe", "Sebiestor Tribe", "Native Freshfood", "Ministry of Internal Order", "Expert Distribution", "Impetus", "Brutor Tribe", "Amarr Imperial Navy", "Ytiri", "Federal Intelligence Office", "Republic Security Services", "Dominations", "Guristas" };
+            var rookieCorps = new[] { "Hedion University", "Imperial Academy", "Royal Amarr Institute", "School of Applied Knowledge", "Science and Trade Institute", "State War Academy", "Center for Advanced Studies", "Federal Navy Academy", "University of Caille", "Pator Tech School", "Republic Military School", "Republic University", "Viziam", "Ministry of War", "Imperial Shipment", "Perkone", "Caldari Provisions", "Deep Core Mining Inc.", "The Scope", "Aliastra", "Garoun Investment Bank", "Brutor Tribe", "Sebiestor Tribe", "Native Freshfood", "Ministry of Internal Order", "Expert Distribution", "Impetus", "Brutor Tribe", "Amarr Imperial Navy", "Ytiri", "Federal Intelligence Office", "Republic Security Services", "Dominations", "Guristas" };
             //Loop Chars corp history
-            foreach (var corp in this.Corps.Where(c => !rookieCorps.Contains(c.corpName)))
+            foreach (var corp in Corps.Where(c => !rookieCorps.Contains(c.corpName)))
             {
                 //get pasted chars who share that corp at same time
                 foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate) > 0))
@@ -176,7 +171,7 @@
                     DateTime entityEnd;
                     if (matchEntry.startDate > corp.startDate) { entityStart = matchEntry.startDate; } else { entityStart = corp.startDate; }
                     if (matchEntry.endDate > corp.endDate) { entityEnd = corp.endDate; } else { entityEnd = matchEntry.endDate; }
-                    var connection = new CharacterConnection()
+                    var connection = new CharacterConnection
                     {
                         charID = match.charID,
                         charName = match.charName,
@@ -220,7 +215,7 @@
         public long[] character { get; set; }
         public long[] corporation { get; set; }
     }
-    public class ESICorp
+    public class ESINames
     {
         public string category { get; set; }
         public int id { get; set; }
@@ -229,6 +224,13 @@
     public class ESICorpHistory
     {
         public int corporation_id { get; set; }
+        public bool is_deleted { get; set; }
+        public int record_id { get; set; }
+        public string start_date { get; set; }
+    }
+    public class ESIAllianceHistory
+    {
+        public int alliance_id { get; set; }
         public bool is_deleted { get; set; }
         public int record_id { get; set; }
         public string start_date { get; set; }
