@@ -109,7 +109,11 @@
             //Get Character ID
             try
             {
-                var charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
+                ESISearch charSearchJson = null;
+                while (charSearchJson == null)
+                {
+                    charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
+                }
                 charID = int.Parse(charSearchJson.character[0].ToString());
             }
             catch (Exception ex)
@@ -121,12 +125,21 @@
         public async Task GetCorps()
         {
             //Get history list
-            var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
+            List<ESICorpHistory> corpHistoryJson = null;
+            while (corpHistoryJson == null)
+            {
+                corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
+            }
             //Process into Corp class
             Corps = new List<Corp>();
             var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
-            var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
-            var corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
+            List<ESINames> corpNames = null;
+            while (corpNames == null)
+            {
+                var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
+                corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
+
+            }
             foreach(var history in corpHistoryJson)
             {
                 var corp = new Corp
