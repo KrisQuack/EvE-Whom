@@ -10,44 +10,47 @@
 <button class="btn btn-primary btn-lg" @onclick="CheckCharacters">Submit</button>
 @if (Progress != 0)
 {
-    <hr />
-    <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((DateTime.Now - RunTimer).TotalSeconds)s</p>
-    <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
-    </div>
+            <hr />
+            <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((DateTime.Now - RunTimer).TotalSeconds)s</p>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
+            </div>
 }
 @if (connections != null)
 {
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col"></th>
-            <th scope="col">Name</th>
-            <th scope="col">Entity</th>
-            <th scope="col">Overlap</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (CharacterConnection connection in connections)
-        {
-            <tr>
-                <td>
-                    <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;" />
-                    <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;" />
-                </td>
-                <td>@connection.charName</td>
-                <td>@connection.entityName</td>
-                <td>@connection.overlapStart.ToString("dd-MMM-yyy") To 
-                    @if (connection.overlapEnd != DateTime.MaxValue)
-                    {
-                        @connection.overlapEnd.ToString("dd-MMM-yyy")
-                    }
-                    else { @DateTime.UtcNow.ToString("dd-MMM-yyy") }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Entity</th>
+                    <th scope="col">Overlap</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (CharacterConnection connection in connections)
+            {
+                            <tr>
+                                <td>
+                                    <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;" />
+                                    <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;" />
+                                </td>
+                                <td>@connection.charName</td>
+                                <td>@connection.entityName</td>
+                                <td>@connection.overlapStart.ToString("dd-MMM-yyy") To 
+                                    @if (connection.overlapEnd != DateTime.MaxValue)
+                        {
+                                                @connection.overlapEnd.ToString("dd-MMM-yyy")
+                        }
+                        else
+                        { 
+                                        @DateTime.UtcNow.ToString("dd-MMM-yyy")
+                        }
+                                </td>
+                            </tr>
+            }
+                </tbody>
+            </table>
 }
 
 @code
@@ -77,7 +80,7 @@
             await mainCharacter.GetCorps();
             //Process Character List
             var pastedCharacters = new List<Character>();
-            foreach(var name in charList)
+            foreach (var name in charList)
             {
                 var character = new Character { charName = name };
                 await character.GetCharID();
@@ -124,45 +127,52 @@
         }
         public async Task GetCorps()
         {
-            //Get history list
-            List<ESICorpHistory> corpHistoryJson = null;
-            while (corpHistoryJson == null)
+            try
             {
-                corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
-            }
-            //Process into Corp class
-            Corps = new List<Corp>();
-            var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
-            List<ESINames> corpNames = null;
-            while (corpNames == null)
-            {
-                var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
-                corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
+                //Get history list
+                List<ESICorpHistory> corpHistoryJson = null;
+                while (corpHistoryJson == null)
+                {
+                    corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
+                }
+                //Process into Corp class
+                Corps = new List<Corp>();
+                var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
+                List<ESINames> corpNames = null;
+                while (corpNames == null)
+                {
+                    var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
+                    corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
 
-            }
-            foreach(var history in corpHistoryJson)
-            {
-                var corp = new Corp
-                {
-                    corpID = history.corporation_id,
-                    corpName = corpNames.FirstOrDefault(c => c.id == history.corporation_id).name,
-                    startDate = DateTime.Parse(history.start_date)
-                };
-                Corps.Add(corp);
-            }
-            //Populate end dates
-            Corp previousCorp = null;
-            foreach (var c in Corps.OrderByDescending(c => c.startDate))
-            {
-                if (previousCorp != null)
-                {
-                    c.endDate = previousCorp.startDate;
                 }
-                else
+                foreach (var history in corpHistoryJson)
                 {
-                    c.endDate = DateTime.MaxValue;
+                    var corp = new Corp
+                    {
+                        corpID = history.corporation_id,
+                        corpName = corpNames.FirstOrDefault(c => c.id == history.corporation_id).name,
+                        startDate = DateTime.Parse(history.start_date)
+                    };
+                    Corps.Add(corp);
                 }
-                previousCorp = c;
+                //Populate end dates
+                Corp previousCorp = null;
+                foreach (var c in Corps.OrderByDescending(c => c.startDate))
+                {
+                    if (previousCorp != null)
+                    {
+                        c.endDate = previousCorp.startDate;
+                    }
+                    else
+                    {
+                        c.endDate = DateTime.MaxValue;
+                    }
+                    previousCorp = c;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
