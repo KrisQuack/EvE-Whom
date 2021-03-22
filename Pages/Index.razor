@@ -70,26 +70,35 @@
         {
             //Progress bar prep
             Progress = 0;
-            var charList = CharPaste.Replace(MainChar, "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var charList = CharPaste.Replace(MainChar, "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
             RunTimer = DateTime.Now;
             CurrentCount = 0;
-            TotalCount = charList.Length;
+            TotalCount = charList.Count;
             //Process Main Character
             var mainCharacter = new Character { charName = MainChar };
             await mainCharacter.GetCharID();
             await mainCharacter.GetCorps();
             //Process Character List
             var pastedCharacters = new List<Character>();
-            foreach (var name in charList)
+            while (charList.Any())
             {
-                var character = new Character { charName = name };
-                await character.GetCharID();
-                await character.GetCorps();
-                pastedCharacters.Add(character);
-                //Count Progress
-                CurrentCount++;
-                Progress = (int)Math.Round((CurrentCount / (decimal)TotalCount) * 100);
-                StateHasChanged();
+                try
+                {
+                    var charName = charList[0];
+                    var character = new Character {charName = charName };
+                    await character.GetCharID();
+                    await character.GetCorps();
+                    pastedCharacters.Add(character);
+                    //Count Progress
+                    charList.Remove(charName);
+                    CurrentCount++;
+                    Progress = (int) Math.Round((CurrentCount / (decimal) TotalCount) * 100);
+                    StateHasChanged();
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("ESI error from "+charList[0]+", trying again");
+                }
             }
             connections = mainCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart).ToList();
             StateHasChanged();
@@ -112,67 +121,46 @@
             //Get Character ID
             try
             {
-                ESISearch charSearchJson = null;
-                while (charSearchJson == null)
-                {
-                    charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
-                }
+                var charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
                 charID = int.Parse(charSearchJson.character[0].ToString());
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
                 charID = 3004033;
             }
         }
         public async Task GetCorps()
         {
-            try
+            //Get history list
+            var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
+            //Process into Corp class
+            Corps = new List<Corp>();
+            var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
+            var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
+            var corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
+            foreach (var history in corpHistoryJson)
             {
-                //Get history list
-                List<ESICorpHistory> corpHistoryJson = null;
-                while (corpHistoryJson == null)
+                var corp = new Corp
                 {
-                    corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
-                }
-                //Process into Corp class
-                Corps = new List<Corp>();
-                var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
-                List<ESINames> corpNames = null;
-                while (corpNames == null)
-                {
-                    var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
-                    corpNames = await corpNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
-
-                }
-                foreach (var history in corpHistoryJson)
-                {
-                    var corp = new Corp
-                    {
-                        corpID = history.corporation_id,
-                        corpName = corpNames.FirstOrDefault(c => c.id == history.corporation_id).name,
-                        startDate = DateTime.Parse(history.start_date)
-                    };
-                    Corps.Add(corp);
-                }
-                //Populate end dates
-                Corp previousCorp = null;
-                foreach (var c in Corps.OrderByDescending(c => c.startDate))
-                {
-                    if (previousCorp != null)
-                    {
-                        c.endDate = previousCorp.startDate;
-                    }
-                    else
-                    {
-                        c.endDate = DateTime.MaxValue;
-                    }
-                    previousCorp = c;
-                }
+                    corpID = history.corporation_id,
+                    corpName = corpNames.FirstOrDefault(c => c.id == history.corporation_id).name,
+                    startDate = DateTime.Parse(history.start_date)
+                };
+                Corps.Add(corp);
             }
-            catch (Exception ex)
+            //Populate end dates
+            Corp previousCorp = null;
+            foreach (var c in Corps.OrderByDescending(c => c.startDate))
             {
-                Console.WriteLine(ex.ToString());
+                if (previousCorp != null)
+                {
+                    c.endDate = previousCorp.startDate;
+                }
+                else
+                {
+                    c.endDate = DateTime.MaxValue;
+                }
+                previousCorp = c;
             }
         }
 
