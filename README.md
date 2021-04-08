@@ -1,5 +1,5 @@
 
-# CorpMates
+# Eve Whom?
 
 This is a small project I created along side my friend Clayton. I came up with the idea when more and more frequently I would login to the game EvE Online after long breaks and have people recognise me and I would have no idea who they were.
 
