@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Threading
 
 <div class="text-center">
     <h3 class="display-4">Paste names into the textboxes below</h3>
@@ -116,7 +117,8 @@
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("ESI error from " + charList[0] + ", trying again");
+                    Console.WriteLine("ESI error from " + charList[0] + ", trying again after 0.5s");
+                    Thread.Sleep(500);
                 }
             }
             connections = mainCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart).ToList();
