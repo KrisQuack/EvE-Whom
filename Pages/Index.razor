@@ -33,7 +33,38 @@
         </tr>
         </thead>
         <tbody>
-        @foreach (CharacterConnection connection in connections)
+        <h4>Corps</h4>
+        @foreach (CharacterConnection connection in connections.Where(c => !c.isalliance))
+        {
+            <tr>
+                <td>
+                    <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;"/>
+                    @if (connection.isalliance)
+                    {
+                        <img src="https://images.evetech.net/alliances/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;"/>
+                    }
+                    else
+                    {
+                        <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;"/>
+                    }
+                </td>
+                <td>@connection.charName</td>
+                <td>@connection.entityName</td>
+                <td>
+                    @connection.overlapStart.ToString("dd-MMM-yyy") To
+                    @if (connection.overlapEnd != DateTime.MaxValue)
+                    {
+                        @connection.overlapEnd.ToString("dd-MMM-yyy")
+                    }
+                    else
+                    {
+                        @DateTime.UtcNow.ToString("dd-MMM-yyy")
+                    }
+                </td>
+            </tr>
+        }
+        <h4>Alliances</h4>
+        @foreach (CharacterConnection connection in connections.Where(c => c.isalliance))
         {
             <tr>
                 <td>
@@ -187,6 +218,7 @@
     //Loop corp history
             foreach (var corp in Corps)
             {
+                var corpalliances = new List<Alliance>();
     //Get Alliances the corp was in
                 var AllianceHistory = await httpClient.GetFromJsonAsync<List<ESIAllianceHistory>>("https://esi.evetech.net/latest/corporations/"+corp.corpID+"/alliancehistory/?datasource=tranquility");
                 AllianceHistory = AllianceHistory.Where(a => a.alliance_id != 0).ToList();
@@ -215,11 +247,11 @@
                             allianceName = allianceNames.FirstOrDefault(c => c.id == history.alliance_id).name,
                             startDate = startdate
                         };
-                        Alliances.Add(alliance);
+                        corpalliances.Add(alliance);
                     }
     //Populate end dates
                     Alliance previousAlliance = null;
-                    foreach (var a in Alliances.OrderByDescending(c => c.startDate))
+                    foreach (var a in corpalliances.OrderByDescending(c => c.startDate))
                     {
                         if (previousAlliance != null)
                         {
@@ -230,6 +262,14 @@
                             a.endDate = DateTime.MaxValue;
                         }
                         previousAlliance = a;
+                    }
+    //Remove alliances when the user was not in the corp
+                    foreach (var alliance in corpalliances)
+                    {
+                        if (alliance.startDate < corp.endDate && corp.startDate < alliance.endDate)
+                        {
+                            Alliances.Add(alliance);
+                        }
                     }
                 }
             }
