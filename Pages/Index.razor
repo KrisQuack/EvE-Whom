@@ -2,55 +2,68 @@
 
 <div class="text-center">
     <h3 class="display-4">Paste names into the textboxes below</h3>
-    Your Character Name:<br />
-    <input @bind="MainChar" class="form-control bg-dark text-light" required="required" spellcheck="false" pattern="[A-Za-z0-9 ]+" title="Please only enter valid character names" /><br />
-    Characters to compare:<br />
+    Your Character Name:<br/>
+    <input @bind="MainChar" class="form-control bg-dark text-light" required="required" spellcheck="false" pattern="[A-Za-z0-9 ]+" title="Please only enter valid character names"/><br/>
+    Characters to compare:<br/>
     <textarea @bind="CharPaste" class="form-control bg-dark text-light" rows="10" required="required" spellcheck="false" pattern="[A-Za-z0-9 ]+" title="Please only enter valid character names"></textarea>
 </div>
+<label class="form-check-label" for="ProcessAlliances">
+    Process Alliances (Slower):
+</label>
+<input type="checkbox" @bind="ProcessAlliances" id="ProcessAlliances">
+<br/>
 <button class="btn btn-primary btn-lg" @onclick="CheckCharacters">Submit</button>
 @if (Progress != 0)
 {
-            <hr />
-            <p class="text-center">@CurrentCount/@TotalCount    Elapsed: @Math.Round((DateTime.Now - RunTimer).TotalSeconds)s</p>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
-            </div>
+    <hr/>
+    <p class="text-center">@CurrentCount/@TotalCount Elapsed: @Math.Round((DateTime.Now - RunTimer).TotalSeconds)s</p>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" style="width: @Progress%;" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress%</div>
+    </div>
 }
 @if (connections != null)
 {
-            <table class="table">
-                <thead>
-                <tr>
-                    <th scope="col"></th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Entity</th>
-                    <th scope="col">Overlap</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (CharacterConnection connection in connections)
-            {
-                            <tr>
-                                <td>
-                                    <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;" />
-                                    <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;" />
-                                </td>
-                                <td>@connection.charName</td>
-                                <td>@connection.entityName</td>
-                                <td>@connection.overlapStart.ToString("dd-MMM-yyy") To 
-                                    @if (connection.overlapEnd != DateTime.MaxValue)
-                        {
-                                                @connection.overlapEnd.ToString("dd-MMM-yyy")
-                        }
-                        else
-                        { 
-                                        @DateTime.UtcNow.ToString("dd-MMM-yyy")
-                        }
-                                </td>
-                            </tr>
-            }
-                </tbody>
-            </table>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">Name</th>
+            <th scope="col">Entity</th>
+            <th scope="col">Overlap</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (CharacterConnection connection in connections)
+        {
+            <tr>
+                <td>
+                    <img src="https://images.evetech.net/characters/@connection.charID/portrait?size=64" style="height: 64px; width: 64px;"/>
+                    @if (connection.isalliance)
+                    {
+                        <img src="https://images.evetech.net/alliances/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;"/>
+                    }
+                    else
+                    {
+                        <img src="https://images.evetech.net/corporations/@connection.entityID/logo?size=64" style="height: 64px; width: 64px;"/>
+                    }
+                </td>
+                <td>@connection.charName</td>
+                <td>@connection.entityName</td>
+                <td>
+                    @connection.overlapStart.ToString("dd-MMM-yyy") To
+                    @if (connection.overlapEnd != DateTime.MaxValue)
+                    {
+                        @connection.overlapEnd.ToString("dd-MMM-yyy")
+                    }
+                    else
+                    {
+                        @DateTime.UtcNow.ToString("dd-MMM-yyy")
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
 }
 
 @code
@@ -61,6 +74,7 @@
     private int CurrentCount;
     private int TotalCount;
     private int Progress;
+    private static bool ProcessAlliances = false;
     private List<CharacterConnection> connections;
     static HttpClient httpClient = new();
 
@@ -68,28 +82,30 @@
     {
         try
         {
-            //Progress bar prep
+    //Progress bar prep
             Progress = 0;
-            var charList = CharPaste.Replace(MainChar, "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var charList = CharPaste.Replace(MainChar, "").Split(new[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries).ToList();
             RunTimer = DateTime.Now;
             CurrentCount = 0;
             TotalCount = charList.Count;
-            //Process Main Character
-            var mainCharacter = new Character { charName = MainChar };
+    //Process Main Character
+            var mainCharacter = new Character {charName = MainChar};
             await mainCharacter.GetCharID();
             await mainCharacter.GetCorps();
-            //Process Character List
+            if(ProcessAlliances){await mainCharacter.GetAlliances();}
+    //Process Character List
             var pastedCharacters = new List<Character>();
             while (charList.Any())
             {
                 try
                 {
                     var charName = charList[0];
-                    var character = new Character {charName = charName };
+                    var character = new Character {charName = charName};
                     await character.GetCharID();
                     await character.GetCorps();
+                    if(ProcessAlliances){await character.GetAlliances();}
                     pastedCharacters.Add(character);
-                    //Count Progress
+    //Count Progress
                     charList.Remove(charName);
                     CurrentCount++;
                     Progress = (int) Math.Round((CurrentCount / (decimal) TotalCount) * 100);
@@ -97,7 +113,7 @@
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("ESI error from "+charList[0]+", trying again");
+                    Console.WriteLine("ESI error from " + charList[0] + ", trying again");
                 }
             }
             connections = mainCharacter.FindConnections(pastedCharacters).OrderByDescending(c => c.overlapStart).ToList();
@@ -118,7 +134,7 @@
 
         public async Task GetCharID()
         {
-            //Get Character ID
+    //Get Character ID
             try
             {
                 var charSearchJson = await httpClient.GetFromJsonAsync<ESISearch>("https://esi.evetech.net/latest/search/?categories=character&datasource=tranquility&language=en-us&search=" + charName + "&strict=true");
@@ -129,11 +145,12 @@
                 charID = 3004033;
             }
         }
+
         public async Task GetCorps()
         {
-            //Get history list
+    //Get history list
             var corpHistoryJson = await httpClient.GetFromJsonAsync<List<ESICorpHistory>>("https://esi.evetech.net/latest/characters/" + charID + "/corporationhistory/?datasource=tranquility");
-            //Process into Corp class
+    //Process into Corp class
             Corps = new List<Corp>();
             var corpIDs = corpHistoryJson.Select(c => c.corporation_id).Distinct().ToArray();
             var corpNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", corpIDs);
@@ -148,7 +165,7 @@
                 };
                 Corps.Add(corp);
             }
-            //Populate end dates
+    //Populate end dates
             Corp previousCorp = null;
             foreach (var c in Corps.OrderByDescending(c => c.startDate))
             {
@@ -164,24 +181,92 @@
             }
         }
 
+        public async Task GetAlliances()
+        {
+            Alliances = new List<Alliance>();
+    //Loop corp history
+            foreach (var corp in Corps)
+            {
+    //Get Alliances the corp was in
+                var AllianceHistory = await httpClient.GetFromJsonAsync<List<ESIAllianceHistory>>("https://esi.evetech.net/latest/corporations/"+corp.corpID+"/alliancehistory/?datasource=tranquility");
+                AllianceHistory = AllianceHistory.Where(a => a.alliance_id != 0).ToList();
+                if(AllianceHistory.Count() > 0)
+                {
+    //Get Alliance Names
+                    var allianceIDs = AllianceHistory.Select(c => c.alliance_id).Distinct().ToArray();
+                    var allianceNameSearch = await httpClient.PostAsJsonAsync("https://esi.evetech.net/latest/universe/names/?datasource=tranquility", allianceIDs);
+                    var allianceNames = await allianceNameSearch.Content.ReadFromJsonAsync<List<ESINames>>();
+                    foreach (var history in AllianceHistory)
+                    {
+    //Get start date from corp or alliance
+                        DateTime startdate;
+                        if (corp.startDate > DateTime.Parse(history.start_date))
+                        {
+                            startdate = corp.startDate;
+                        }
+                        else
+                        {
+                            startdate = DateTime.Parse(history.start_date);
+                        }
+    //Write alliance to list
+                        var alliance = new Alliance
+                        {
+                            allianceID = history.alliance_id,
+                            allianceName = allianceNames.FirstOrDefault(c => c.id == history.alliance_id).name,
+                            startDate = startdate
+                        };
+                        Alliances.Add(alliance);
+                    }
+    //Populate end dates
+                    Alliance previousAlliance = null;
+                    foreach (var a in Alliances.OrderByDescending(c => c.startDate))
+                    {
+                        if (previousAlliance != null)
+                        {
+                            a.endDate = previousAlliance.startDate;
+                        }
+                        else
+                        {
+                            a.endDate = DateTime.MaxValue;
+                        }
+                        previousAlliance = a;
+                    }
+                }
+            }
+        }
+
         public List<CharacterConnection> FindConnections(List<Character> pastedCharacters)
         {
             var Connections = new List<CharacterConnection>();
-            //Define rookie corps to ignore
+    //Define rookie corps to ignore
 
-            var rookieCorps = new[] { "Hedion University", "Imperial Academy", "Royal Amarr Institute", "School of Applied Knowledge", "Science and Trade Institute", "State War Academy", "Center for Advanced Studies", "Federal Navy Academy", "University of Caille", "Pator Tech School", "Republic Military School", "Republic University", "Viziam", "Ministry of War", "Imperial Shipment", "Perkone", "Caldari Provisions", "Deep Core Mining Inc.", "The Scope", "Aliastra", "Garoun Investment Bank", "Brutor Tribe", "Sebiestor Tribe", "Native Freshfood", "Ministry of Internal Order", "Expert Distribution", "Impetus", "Brutor Tribe", "Amarr Imperial Navy", "Ytiri", "Federal Intelligence Office", "Republic Security Services", "Dominations", "Guristas" };
-            //Loop Chars corp history
+            var rookieCorps = new[] {"Hedion University", "Imperial Academy", "Royal Amarr Institute", "School of Applied Knowledge", "Science and Trade Institute", "State War Academy", "Center for Advanced Studies", "Federal Navy Academy", "University of Caille", "Pator Tech School", "Republic Military School", "Republic University", "Viziam", "Ministry of War", "Imperial Shipment", "Perkone", "Caldari Provisions", "Deep Core Mining Inc.", "The Scope", "Aliastra", "Garoun Investment Bank", "Brutor Tribe", "Sebiestor Tribe", "Native Freshfood", "Ministry of Internal Order", "Expert Distribution", "Impetus", "Brutor Tribe", "Amarr Imperial Navy", "Ytiri", "Federal Intelligence Office", "Republic Security Services", "Dominations", "Guristas"};
+    //Loop Chars corp history
             foreach (var corp in Corps.Where(c => !rookieCorps.Contains(c.corpName)))
             {
-                //get pasted chars who share that corp at same time
+    //get pasted chars who share that corp at same time
                 foreach (var match in pastedCharacters.Where(p => p.Corps.Count(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate) > 0))
                 {
                     var matchEntry = match.Corps.FirstOrDefault(c => c.corpID == corp.corpID && c.startDate < corp.endDate && corp.startDate < c.endDate);
-                    //Calculate overlap dates
+    //Calculate overlap dates
                     DateTime entityStart;
                     DateTime entityEnd;
-                    if (matchEntry.startDate > corp.startDate) { entityStart = matchEntry.startDate; } else { entityStart = corp.startDate; }
-                    if (matchEntry.endDate > corp.endDate) { entityEnd = corp.endDate; } else { entityEnd = matchEntry.endDate; }
+                    if (matchEntry.startDate > corp.startDate)
+                    {
+                        entityStart = matchEntry.startDate;
+                    }
+                    else
+                    {
+                        entityStart = corp.startDate;
+                    }
+                    if (matchEntry.endDate > corp.endDate)
+                    {
+                        entityEnd = corp.endDate;
+                    }
+                    else
+                    {
+                        entityEnd = matchEntry.endDate;
+                    }
                     var connection = new CharacterConnection
                     {
                         charID = match.charID,
@@ -189,14 +274,57 @@
                         entityID = corp.corpID,
                         entityName = corp.corpName,
                         overlapStart = entityStart,
-                        overlapEnd = entityEnd
+                        overlapEnd = entityEnd,
+                        isalliance = false
                     };
                     Connections.Add(connection);
+                }
+            }
+            if (ProcessAlliances)
+            {
+                foreach (var alliance in Alliances.Where(c => !rookieCorps.Contains(c.allianceName)))
+                {
+    //get pasted chars who share that corp at same time
+                    foreach (var match in pastedCharacters.Where(p => p.Alliances.Count(a => a.allianceID == alliance.allianceID && a.startDate < alliance.endDate && alliance.startDate < a.endDate) > 0))
+                    {
+                        var matchEntry = match.Alliances.FirstOrDefault(a => a.allianceID == alliance.allianceID && a.startDate < alliance.endDate && alliance.startDate < a.endDate);
+    //Calculate overlap dates
+                        DateTime entityStart;
+                        DateTime entityEnd;
+                        if (matchEntry.startDate > alliance.startDate)
+                        {
+                            entityStart = matchEntry.startDate;
+                        }
+                        else
+                        {
+                            entityStart = alliance.startDate;
+                        }
+                        if (matchEntry.endDate > alliance.endDate)
+                        {
+                            entityEnd = alliance.endDate;
+                        }
+                        else
+                        {
+                            entityEnd = matchEntry.endDate;
+                        }
+                        var connection = new CharacterConnection
+                        {
+                            charID = match.charID,
+                            charName = match.charName,
+                            entityID = alliance.allianceID,
+                            entityName = alliance.allianceName,
+                            overlapStart = entityStart,
+                            overlapEnd = entityEnd,
+                            isalliance = true
+                        };
+                        Connections.Add(connection);
+                    }
                 }
             }
             return Connections;
         }
     }
+
     public class Corp
     {
         public string corpName { get; set; }
@@ -204,6 +332,7 @@
         public DateTime startDate { get; set; }
         public DateTime endDate { get; set; }
     }
+
     public class Alliance
     {
         public string allianceName { get; set; }
@@ -211,6 +340,7 @@
         public DateTime startDate { get; set; }
         public DateTime endDate { get; set; }
     }
+
     public class CharacterConnection
     {
         public string charName { get; set; }
@@ -219,19 +349,23 @@
         public int entityID { get; set; }
         public DateTime overlapStart { get; set; }
         public DateTime overlapEnd { get; set; }
+        public bool isalliance { get; set; }
     }
+
     public class ESISearch
     {
         public long[] alliance { get; set; }
         public long[] character { get; set; }
         public long[] corporation { get; set; }
     }
+
     public class ESINames
     {
         public string category { get; set; }
         public int id { get; set; }
         public string name { get; set; }
     }
+
     public class ESICorpHistory
     {
         public int corporation_id { get; set; }
@@ -239,6 +373,7 @@
         public int record_id { get; set; }
         public string start_date { get; set; }
     }
+
     public class ESIAllianceHistory
     {
         public int alliance_id { get; set; }
