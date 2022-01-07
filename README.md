@@ -1,4 +1,4 @@
-# Eve Whom? https://whom.kristentidmuss.dev
+# Eve Whom?
 ## Intro
 This is a small web app I created as an into the the Blazor WebAssembly framework. I came up with the idea when more and more frequently I would login to the game EvE Online after long breaks and have people recognize me and I would have no idea who they were.
 
